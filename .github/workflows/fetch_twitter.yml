@@ -12,7 +12,8 @@ on:
       options:
       - info
       - warning
-      - debug 
+      - debug
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
