@@ -4,6 +4,15 @@ on:
   #schedule:
   #- cron: "*/15 * * * *"
   workflow_dispatch:
+    logLevel:
+      description: 'Log level'
+      required: true
+      default: 'warning' 
+      type: choice
+      options:
+      - info
+      - warning
+      - debug 
 jobs:
   deploy:
     runs-on: ubuntu-latest
