@@ -1,19 +1,8 @@
 name: fetch_twitter
 
 on:
-  #schedule:
-  #- cron: "*/15 * * * *"
-  workflow_dispatch:
-    logLevel:
-      description: "Log level"
-      required: true
-      default: "warning"
-      type: choice
-      options:
-        - info
-        - warning
-        - debug
-
+  schedule:
+    - cron: "*/15 * * * *"
 jobs:
   deploy:
     runs-on: ubuntu-latest
