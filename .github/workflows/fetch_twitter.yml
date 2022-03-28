@@ -1,0 +1,29 @@
+name: fetch_twitter
+
+on:
+    #schedule:
+    #- cron: "*/15 * * * *"
+    workflow_dispatch:
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: build
+            - uses: actions/checkout@v3
+              with:
+                  ref: gh-pages
+            - uses: actions/setup-node@master
+              with:
+                  node-version: "16.x"
+            - run: npm install
+            - run: npm run build
+              env:
+                  TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+                  TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+                  TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+                  TWITTER_API_SECRET_KEY: ${{ secrets.TWITTER_API_SECRET_KEY }}
+            - name: Deploy
+              uses: JamesIves/github-pages-deploy-action@v4.2.5
+              with:
+                  branch: gh-pages # The branch the action should deploy to.
+                  folder: / # The folder the action should deploy.

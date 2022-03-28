@@ -1,0 +1,33 @@
+{
+    "name": "twitter-graph",
+    "version": "0.1.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node ./index.js",
+        "build": "mix --production"
+    },
+    "keywords": [
+        "Twitter",
+        "Graph"
+    ],
+    "author": "Greaby",
+    "license": "ISC",
+    "devDependencies": {
+        "dotenv": "^16.0.0",
+        "graphology-layout": "^0.5.0",
+        "graphology-layout-forceatlas2": "^0.8.2",
+        "graphology-pagerank": "^1.1.0",
+        "laravel-mix": "^6.0.43",
+        "resolve-url-loader": "^5.0.0",
+        "sass": "^1.49.9",
+        "sass-loader": "^12.6.0",
+        "seedrandom": "^3.0.5",
+        "twitter": "^1.7.1"
+    },
+    "dependencies": {
+        "graphology": "^0.24.1",
+        "sigma": "^2.2.0"
+    }
+}
