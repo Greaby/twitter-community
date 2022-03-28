@@ -5,25 +5,25 @@ on:
   #- cron: "*/15 * * * *"
   workflow_dispatch:
     logLevel:
-      description: 'Log level'
+      description: "Log level"
       required: true
-      default: 'warning' 
+      default: "warning"
       type: choice
       options:
-      - info
-      - warning
-      - debug
+        - info
+        - warning
+        - debug
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      with:
-        ref: main
+        with:
+          ref: main
       - uses: actions/setup-node@master
-      with:
-        node-version: "16.x"
+        with:
+          node-version: "16.x"
       - run: npm install
       - run: npm run build
         env:
