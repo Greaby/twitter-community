@@ -244,9 +244,7 @@ const get_account_infos = async (
                 if (type == "followers") {
                     add_relation(user.id, twitter_id);
                 } else {
-                    if (user.id !== config.twitter_id) {
-                        add_relation(twitter_id, user.id);
-                    }
+                    add_relation(twitter_id, user.id);
                 }
             });
 
