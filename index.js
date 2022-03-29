@@ -106,7 +106,7 @@ const generate = async () => {
 const calculate_nodes_size = () => {
     const ranks = twitter_graph
         .mapNodes((node, attributes) => {
-            return node === config.twitter_id ? null : attributes.pagerank;
+            return node == config.twitter_id ? null : attributes.pagerank;
         })
         .filter((x) => x);
 
@@ -133,7 +133,7 @@ const calculate_nodes_size = () => {
     twitter_graph.setNodeAttribute(
         config.twitter_id,
         "size",
-        config.graph.node_max_size
+        Math.round(config.graph.node_max_size)
     );
 };
 
