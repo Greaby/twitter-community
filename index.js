@@ -48,6 +48,18 @@ const generate = async () => {
         console.log(error);
     }
 
+    const graph_data = JSON.stringify(twitter_graph.export());
+
+    fs.writeFile(`dist/index.json`, graph_data, function (err) {
+        if (err) return console.log(err);
+    });
+
+    twitter_graph.forEachNode((node, _attributes) => {
+        if (twitter_graph.degree(node) == 0) {
+            twitter_graph.dropNode(node);
+        }
+    });
+
     pagerank.assign(twitter_graph);
     random.assign(twitter_graph);
 
@@ -67,9 +79,9 @@ const generate = async () => {
         twitter_graph.updateNodeAttribute(node, "y", (y) => Math.round(y));
     });
 
-    const data = JSON.stringify(twitter_graph.export());
+    const graph_min_data = JSON.stringify(twitter_graph.export());
 
-    fs.writeFile(`dist/index.json`, data, function (err) {
+    fs.writeFile(`dist/index.min.json`, graph_min_data, function (err) {
         if (err) return console.log(err);
     });
 };
@@ -232,7 +244,9 @@ const get_account_infos = async (
                 if (type == "followers") {
                     add_relation(user.id, twitter_id);
                 } else {
-                    add_relation(twitter_id, user.id);
+                    if (user.id !== config.twitter_id) {
+                        add_relation(twitter_id, user.id);
+                    }
                 }
             });
 

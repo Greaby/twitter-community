@@ -125,6 +125,6 @@ const loadSigma = async (json_file) => {
 // };
 
 window.addEventListener("DOMContentLoaded", function () {
-    loadSigma("./index.json");
+    loadSigma("./index.min.json");
     //loadSearch();
 });
