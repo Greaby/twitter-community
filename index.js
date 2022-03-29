@@ -35,12 +35,7 @@ const twitter_client = new Twitter({
 
 const generate = async () => {
     try {
-        await get_account_infos(
-            "followers",
-            config.twitter_account,
-            config.twitter_id,
-            true
-        );
+        await get_main_account();
 
         const nodes = twitter_graph.nodes();
 
@@ -120,6 +115,71 @@ const add_relation = (from_id, to_id) => {
     }
 };
 
+const get_main_account = async () => {
+    // created account node
+    if (!twitter_graph.hasNode(config.twitter_id)) {
+        console.log(`add account: ${config.twitter_account}`);
+        twitter_graph.addNode(config.twitter_id, {
+            label: config.twitter_account,
+        });
+    }
+
+    twitter_graph.setNodeAttribute(config.twitter_id, "updated", true);
+
+    let next_cursor = -1;
+    if (
+        twitter_graph.hasNodeAttribute(
+            config.twitter_id,
+            `followers_next_cursor`
+        )
+    ) {
+        next_cursor = twitter_graph.getNodeAttribute(
+            config.twitter_id,
+            `followers_next_cursor`
+        );
+
+        if (next_cursor === 0) {
+            next_cursor = -1;
+
+            // Cleanup people who unfollow
+            twitter_graph.forEachNode((node, attributes) => {
+                if (!attributes.updated) {
+                    twitter_graph.dropNode(node);
+                } else {
+                    twitter_graph.setNodeAttribute(node, "updated", false);
+                }
+            });
+        }
+    }
+
+    console.log(`Fetch account: ${config.twitter_account}`);
+
+    return twitter_client
+        .get(`followers/list`, {
+            screen_name: config.twitter_account,
+            count: 200,
+            cursor: next_cursor,
+        })
+        .then((result) => {
+            twitter_graph.setNodeAttribute(
+                config.twitter_id,
+                `followers_next_cursor`,
+                result.next_cursor
+            );
+
+            result.users.map((user) => {
+                if (!twitter_graph.hasNode(user.id)) {
+                    console.log(`add account: ${user.screen_name}`);
+                    twitter_graph.addNode(user.id, {
+                        label: user.screen_name,
+                    });
+                }
+
+                twitter_graph.setNodeAttribute(user.id, "updated", true);
+            });
+        });
+};
+
 const get_account_infos = async (
     type = "followers",
     screen_name,
@@ -140,17 +200,9 @@ const get_account_infos = async (
             `${type}_next_cursor`
         );
 
-        const updated_date = new Date(
-            twitter_graph.getNodeAttribute(twitter_id, "updated_at")
-        );
-
         // ignore recently parsed account
-        if (next_cursor === 0 && now - updated_date < config.expire) {
-            return;
-        }
-
         if (next_cursor === 0) {
-            next_cursor = -1;
+            return;
         }
     }
 
@@ -162,16 +214,12 @@ const get_account_infos = async (
             cursor: next_cursor,
         })
         .then((result) => {
-            twitter_graph.updateNodeAttribute(
+            twitter_graph.setNodeAttribute(
                 twitter_id,
                 `${type}_next_cursor`,
-                (_value) => result.next_cursor
+                result.next_cursor
             );
-            twitter_graph.updateNodeAttribute(
-                twitter_id,
-                "updated_at",
-                (_value) => now
-            );
+            twitter_graph.setNodeAttribute(twitter_id, "updated", true);
 
             result.users.map((user) => {
                 if (add_followers && !twitter_graph.hasNode(user.id)) {
@@ -192,8 +240,15 @@ const get_account_infos = async (
         })
         .catch((error) => {
             if (Array.isArray(error) && error[0].code === 88) {
+                // rate limit
                 throw error;
             } else {
+                // other errors
+                twitter_graph.setNodeAttribute(
+                    twitter_id,
+                    `${type}_next_cursor`,
+                    0
+                );
                 console.log(error);
             }
         });
