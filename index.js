@@ -93,7 +93,6 @@ const generate = async () => {
             _targetAttributes
         ) => {
             twitter_graph.removeEdgeAttribute(edge, "up");
-
         }
     );
 
@@ -106,8 +105,8 @@ const generate = async () => {
 
 const calculate_nodes_size = () => {
     const ranks = twitter_graph
-        .mapNodes((_node, attributes) => {
-            return attributes.pagerank;
+        .mapNodes((node, attributes) => {
+            return node === config.twitter_id ? null : attributes.pagerank;
         })
         .filter((x) => x);
 
@@ -130,6 +129,12 @@ const calculate_nodes_size = () => {
             )
         );
     });
+
+    twitter_graph.setNodeAttribute(
+        config.twitter_id,
+        "size",
+        config.graph.node_max_size
+    );
 };
 
 const add_relation = (from_id, to_id) => {
