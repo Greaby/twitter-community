@@ -55,7 +55,7 @@ const generate = async () => {
     });
 
     twitter_graph.forEachNode((node, _attributes) => {
-        if (twitter_graph.degree(node) == 0) {
+        if (twitter_graph.degree(node) <= 1) {
             twitter_graph.dropNode(node);
         }
     });
