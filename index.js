@@ -75,6 +75,11 @@ const generate = async () => {
     // Optimization of the JSON file size
     twitter_graph.forEachNode((node, _attributes) => {
         twitter_graph.removeNodeAttribute(node, "pagerank");
+        twitter_graph.removeNodeAttribute(node, "updated");
+        twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
+        twitter_graph.removeNodeAttribute(node, "friends_next_cursor");
+
+
         twitter_graph.updateNodeAttribute(node, "x", (x) => Math.round(x));
         twitter_graph.updateNodeAttribute(node, "y", (y) => Math.round(y));
     });
