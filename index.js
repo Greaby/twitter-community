@@ -75,14 +75,27 @@ const generate = async () => {
     // Optimization of the JSON file size
     twitter_graph.forEachNode((node, _attributes) => {
         twitter_graph.removeNodeAttribute(node, "pagerank");
-        twitter_graph.removeNodeAttribute(node, "updated");
+        twitter_graph.removeNodeAttribute(node, "up");
         twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
         twitter_graph.removeNodeAttribute(node, "friends_next_cursor");
-
 
         twitter_graph.updateNodeAttribute(node, "x", (x) => Math.round(x));
         twitter_graph.updateNodeAttribute(node, "y", (y) => Math.round(y));
     });
+
+    twitter_graph.forEachEdge(
+        (
+            edge,
+            _attributes,
+            _source,
+            _target,
+            _sourceAttributes,
+            _targetAttributes
+        ) => {
+            twitter_graph.removeEdgeAttribute(edge, "up");
+
+        }
+    );
 
     const graph_min_data = JSON.stringify(twitter_graph.export());
 
@@ -129,6 +142,7 @@ const add_relation = (from_id, to_id) => {
 
             twitter_graph.addEdge(from_id, to_id);
         }
+        twitter_graph.setEdgeAttribute(from_id, to_id, "up", true);
     }
 };
 
@@ -141,7 +155,7 @@ const get_main_account = async () => {
         });
     }
 
-    twitter_graph.setNodeAttribute(config.twitter_id, "updated", true);
+    twitter_graph.setNodeAttribute(config.twitter_id, "up", true);
 
     let next_cursor = -1;
     if (
@@ -160,10 +174,10 @@ const get_main_account = async () => {
 
             // Cleanup people who unfollow
             twitter_graph.forEachNode((node, attributes) => {
-                if (!attributes.updated) {
+                if (!attributes.up) {
                     twitter_graph.dropNode(node);
                 } else {
-                    twitter_graph.setNodeAttribute(node, "updated", false);
+                    twitter_graph.setNodeAttribute(node, "up", false);
                 }
             });
         }
@@ -192,7 +206,7 @@ const get_main_account = async () => {
                     });
                 }
 
-                twitter_graph.setNodeAttribute(user.id, "updated", true);
+                twitter_graph.setNodeAttribute(user.id, "up", true);
             });
         });
 };
@@ -236,7 +250,7 @@ const get_account_infos = async (
                 `${type}_next_cursor`,
                 result.next_cursor
             );
-            twitter_graph.setNodeAttribute(twitter_id, "updated", true);
+            twitter_graph.setNodeAttribute(twitter_id, "up", true);
 
             result.users.map((user) => {
                 if (add_followers && !twitter_graph.hasNode(user.id)) {
