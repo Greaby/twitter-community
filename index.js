@@ -180,10 +180,7 @@ const get_main_account = async () => {
     }
 
     if (
-        twitter_graph.hasNodeAttribute(
-            config.twitter_id,
-            `friends_next_cursor`
-        )
+        twitter_graph.hasNodeAttribute(config.twitter_id, `friends_next_cursor`)
     ) {
         friends_next_cursor = twitter_graph.getNodeAttribute(
             config.twitter_id,
@@ -194,6 +191,18 @@ const get_main_account = async () => {
     if (followers_next_cursor === 0 && friends_next_cursor === 0) {
         followers_next_cursor = -1;
         friends_next_cursor = -1;
+
+        twitter_graph.setNodeAttribute(
+            config.twitter_id,
+            `friends_next_cursor`,
+            -1
+        );
+
+        twitter_graph.setNodeAttribute(
+            config.twitter_id,
+            `followers_next_cursor`,
+            -1
+        );
 
         // Cleanup people who no longer in the network
         twitter_graph.forEachNode((node, attributes) => {
