@@ -42,7 +42,10 @@ const generate = async () => {
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             const attributes = twitter_graph.getNodeAttributes(node);
-            await get_account_infos("friends", attributes.label, node);
+
+            if (node != config.twitter_id) {
+                await get_account_infos("friends", attributes.label, node);
+            }
         }
     } catch (error) {
         console.log(error);
@@ -162,39 +165,77 @@ const get_main_account = async () => {
 
     twitter_graph.setNodeAttribute(config.twitter_id, "up", true);
 
-    let next_cursor = -1;
+    let followers_next_cursor = -1;
+    let friends_next_cursor = -1;
     if (
         twitter_graph.hasNodeAttribute(
             config.twitter_id,
             `followers_next_cursor`
         )
     ) {
-        next_cursor = twitter_graph.getNodeAttribute(
+        followers_next_cursor = twitter_graph.getNodeAttribute(
             config.twitter_id,
             `followers_next_cursor`
         );
+    }
 
-        if (next_cursor === 0) {
-            next_cursor = -1;
+    if (
+        twitter_graph.hasNodeAttribute(
+            config.twitter_id,
+            `friends_next_cursor`
+        )
+    ) {
+        friends_next_cursor = twitter_graph.getNodeAttribute(
+            config.twitter_id,
+            `friends_next_cursor`
+        );
+    }
 
-            // Cleanup people who unfollow
-            twitter_graph.forEachNode((node, attributes) => {
-                if (!attributes.up) {
-                    twitter_graph.dropNode(node);
-                } else {
-                    twitter_graph.setNodeAttribute(node, "up", false);
-                }
-            });
-        }
+    if (followers_next_cursor === 0 && friends_next_cursor === 0) {
+        followers_next_cursor = -1;
+        friends_next_cursor = -1;
+
+        // Cleanup people who no longer in the network
+        twitter_graph.forEachNode((node, attributes) => {
+            if (!attributes.up) {
+                twitter_graph.dropNode(node);
+            } else {
+                twitter_graph.setNodeAttribute(node, "up", false);
+            }
+        });
     }
 
     console.log(`Fetch account: ${config.twitter_account}`);
+    await twitter_client
+        .get(`friends/list`, {
+            screen_name: config.twitter_account,
+            count: 200,
+            cursor: friends_next_cursor,
+        })
+        .then((result) => {
+            twitter_graph.setNodeAttribute(
+                config.twitter_id,
+                `friends_next_cursor`,
+                result.next_cursor
+            );
+
+            result.users.map((user) => {
+                if (!twitter_graph.hasNode(user.id)) {
+                    console.log(`add account: ${user.screen_name}`);
+                    twitter_graph.addNode(user.id, {
+                        label: user.screen_name,
+                    });
+                }
+                add_relation(config.twitter_id, user.id);
+                twitter_graph.setNodeAttribute(user.id, "up", true);
+            });
+        });
 
     return twitter_client
         .get(`followers/list`, {
             screen_name: config.twitter_account,
             count: 200,
-            cursor: next_cursor,
+            cursor: followers_next_cursor,
         })
         .then((result) => {
             twitter_graph.setNodeAttribute(
@@ -211,6 +252,7 @@ const get_main_account = async () => {
                     });
                 }
 
+                add_relation(user.id, config.twitter_id);
                 twitter_graph.setNodeAttribute(user.id, "up", true);
             });
         });
