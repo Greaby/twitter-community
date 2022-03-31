@@ -1,6 +1,8 @@
 name: fetch_twitter
 
-on: workflow_dispatch
+on:
+  schedule:
+    - cron: "*/15 * * * *"
 jobs:
   deploy:
     runs-on: ubuntu-latest
