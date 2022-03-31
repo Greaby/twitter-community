@@ -60,10 +60,57 @@ const loadSigma = async (json_file) => {
 
     const renderer = new Sigma(graph, container, settings);
 
-    renderer.on("clickNode", ({ node, captor, event }) => {
-        let slug = graph.getNodeAttribute(node, "slug");
-        let cat = graph.getNodeAttribute(node, "cat");
-        window.location = `./${cat}-${slug}.html`;
+    let hoveredNode = undefined;
+    let hoveredNeighbors = undefined;
+    const setHoveredNode = (node) => {
+        if (node) {
+            hoveredNode = node;
+            hoveredNeighbors = graph.neighbors(node);
+        } else {
+            hoveredNode = undefined;
+            hoveredNeighbors = undefined;
+        }
+
+        // Refresh rendering:
+        renderer.refresh();
+    };
+
+    renderer.on("enterNode", ({ node }) => {
+        setHoveredNode(node);
+    });
+    renderer.on("leaveNode", () => {
+        setHoveredNode(undefined);
+    });
+
+    renderer.setSetting("nodeReducer", (node, data) => {
+        if (
+            hoveredNeighbors &&
+            !hoveredNeighbors.includes(node) &&
+            hoveredNode !== node
+        ) {
+            data.label = "";
+            data.color = "#f6f6f6";
+        }
+
+        return data;
+    });
+
+    // Render edges accordingly to the internal state:
+    // 1. If a node is hovered, the edge is hidden if it is not connected to the
+    //    node
+    // 2. If there is a query, the edge is only visible if it connects two
+    //    suggestions
+    renderer.setSetting("edgeReducer", (edge, data) => {
+        if (hoveredNode && !graph.hasExtremity(edge, hoveredNode)) {
+            data.hidden = true;
+            data.size = 3;
+        } else {
+            data.size = 1;
+        }
+
+        data.type = "arrow";
+
+        return data;
     });
 };
 

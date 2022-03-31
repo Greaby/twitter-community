@@ -14,6 +14,7 @@ const { Graph } = require("graphology");
 const pagerank = require("graphology-pagerank");
 const forceAtlas2 = require("graphology-layout-forceatlas2");
 const random = require("graphology-layout/random");
+const louvain = require("graphology-communities-louvain");
 
 const { range } = require("./src/twitter-graph/interpolation");
 
@@ -66,6 +67,8 @@ const generate = async () => {
     pagerank.assign(twitter_graph);
     random.assign(twitter_graph);
 
+    louvain.assign(twitter_graph);
+
     calculate_nodes_size();
 
     forceAtlas2.assign(twitter_graph, {
@@ -76,7 +79,12 @@ const generate = async () => {
     });
 
     // Optimization of the JSON file size
-    twitter_graph.forEachNode((node, _attributes) => {
+    twitter_graph.forEachNode((node, attributes) => {
+        twitter_graph.setNodeAttribute(
+            node,
+            "color",
+            config.colors[attributes.community]
+        );
         twitter_graph.removeNodeAttribute(node, "pagerank");
         twitter_graph.removeNodeAttribute(node, "up");
         twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
@@ -92,10 +100,16 @@ const generate = async () => {
             _attributes,
             _source,
             _target,
-            _sourceAttributes,
+            sourceAttributes,
             _targetAttributes
         ) => {
             twitter_graph.removeEdgeAttribute(edge, "up");
+
+            twitter_graph.setEdgeAttribute(
+                edge,
+                "color",
+                config.edge_colors[sourceAttributes.community]
+            );
         }
     );
 
