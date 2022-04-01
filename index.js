@@ -67,7 +67,7 @@ const generate = async () => {
     pagerank.assign(twitter_graph, { alpha: 0.2 });
     random.assign(twitter_graph);
 
-    louvain.assign(twitter_graph);
+    louvain.assign(twitter_graph, { nodeCommunityAttribute: "c" });
 
     calculate_nodes_size();
 
@@ -80,11 +80,6 @@ const generate = async () => {
 
     // Optimization of the JSON file size
     twitter_graph.forEachNode((node, attributes) => {
-        twitter_graph.setNodeAttribute(
-            node,
-            "color",
-            config.colors[attributes.community]
-        );
         twitter_graph.removeNodeAttribute(node, "pagerank");
         twitter_graph.removeNodeAttribute(node, "up");
         twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
@@ -104,12 +99,6 @@ const generate = async () => {
             _targetAttributes
         ) => {
             twitter_graph.removeEdgeAttribute(edge, "up");
-
-            twitter_graph.setEdgeAttribute(
-                edge,
-                "color",
-                config.edge_colors[sourceAttributes.community]
-            );
         }
     );
 

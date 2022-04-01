@@ -82,17 +82,46 @@ const loadSigma = async (json_file) => {
         setHoveredNode(undefined);
     });
 
-    renderer.setSetting("nodeReducer", (node, data) => {
+    graph.forEachNode((node, attributes) => {
+        graph.setNodeAttribute(
+            node,
+            "color",
+            config.colors[attributes.c % config.colors.length]
+        );
+    });
+
+    graph.forEachEdge(
+        (
+            edge,
+            _attributes,
+            _source,
+            _target,
+            sourceAttributes,
+            _targetAttributes
+        ) => {
+            graph.setEdgeAttribute(
+                edge,
+                "color",
+                config.edge_colors[
+                    sourceAttributes.c % config.edge_colors.length
+                ]
+            );
+
+            graph.setEdgeAttribute(edge, "type", "arrow");
+        }
+    );
+
+    renderer.setSetting("nodeReducer", (node, attributes) => {
         if (
             hoveredNeighbors &&
             !hoveredNeighbors.includes(node) &&
             hoveredNode !== node
         ) {
-            data.label = "";
-            data.color = "#f6f6f6";
+            attributes.label = "";
+            attributes.color = "#f6f6f6";
         }
 
-        return data;
+        return attributes;
     });
 
     // Render edges accordingly to the internal state:
@@ -100,17 +129,12 @@ const loadSigma = async (json_file) => {
     //    node
     // 2. If there is a query, the edge is only visible if it connects two
     //    suggestions
-    renderer.setSetting("edgeReducer", (edge, data) => {
+    renderer.setSetting("edgeReducer", (edge, attributes) => {
         if (hoveredNode && !graph.hasExtremity(edge, hoveredNode)) {
-            data.hidden = true;
-            data.size = 3;
-        } else {
-            data.size = 1;
+            attributes.hidden = true;
         }
 
-        data.type = "arrow";
-
-        return data;
+        return attributes;
     });
 };
 
