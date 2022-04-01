@@ -19,7 +19,7 @@
         "graphology-communities-louvain": "^2.0.0",
         "graphology-layout": "^0.5.0",
         "graphology-layout-forceatlas2": "^0.8.2",
-        "graphology-pagerank": "^1.1.0",
+        "graphology-metrics": "^2.1.0",
         "laravel-mix": "^6.0.43",
         "resolve-url-loader": "^5.0.0",
         "sass": "^1.49.9",

@@ -11,7 +11,7 @@ try {
 
 const Twitter = require("twitter");
 const { Graph } = require("graphology");
-const pagerank = require("graphology-pagerank");
+const pagerank = require("graphology-metrics/centrality/pagerank");
 const forceAtlas2 = require("graphology-layout-forceatlas2");
 const random = require("graphology-layout/random");
 const louvain = require("graphology-communities-louvain");
@@ -64,7 +64,7 @@ const generate = async () => {
         }
     });
 
-    pagerank.assign(twitter_graph);
+    pagerank.assign(twitter_graph, { alpha: 0.2 });
     random.assign(twitter_graph);
 
     louvain.assign(twitter_graph);
