@@ -79,7 +79,7 @@ const generate = async () => {
     });
 
     // Optimization of the JSON file size
-    twitter_graph.forEachNode((node, attributes) => {
+    twitter_graph.forEachNode((node, _attributes) => {
         twitter_graph.removeNodeAttribute(node, "pagerank");
         twitter_graph.removeNodeAttribute(node, "up");
         twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
@@ -102,7 +102,46 @@ const generate = async () => {
         }
     );
 
-    const graph_min_data = JSON.stringify(twitter_graph.export());
+    const incremental_id = () => {
+        let key_map = {};
+
+        let i = 0;
+
+        return (key) => {
+            if (key_map[key] === undefined) {
+                key_map[key] = i++;
+            }
+            return key_map[key];
+        };
+    };
+
+    const key_generator = incremental_id();
+
+    let graph_minify = new Graph();
+
+    twitter_graph.forEachNode((node, attributes) => {
+        graph_minify.addNode(key_generator(node), attributes);
+    });
+
+    twitter_graph.forEachEdge(
+        (
+            edge,
+            attributes,
+            source,
+            target,
+            _sourceAttributes,
+            _targetAttributes
+        ) => {
+            graph_minify.addEdgeWithKey(
+                key_generator(edge),
+                key_generator(source),
+                key_generator(target),
+                attributes
+            );
+        }
+    );
+
+    const graph_min_data = JSON.stringify(graph_minify.export());
 
     fs.writeFile(`dist/index.min.json`, graph_min_data, function (err) {
         if (err) return console.log(err);

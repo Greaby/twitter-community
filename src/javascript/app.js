@@ -15,6 +15,7 @@ const loadSigma = async (json_file) => {
     const settings = {
         labelRenderedSizeThreshold: 16,
         defaultEdgeColor: "#e2e8f0",
+        defaultEdgeType: "arrow",
     };
 
     const renderer = new Sigma(graph, container, settings);
@@ -108,8 +109,6 @@ const loadSigma = async (json_file) => {
                     sourceAttributes.c % config.edge_colors.length
                 ]
             );
-
-            graph.setEdgeAttribute(edge, "type", "arrow");
         }
     );
 
