@@ -2,12 +2,30 @@ import Graph from "graphology";
 import Sigma from "sigma";
 import config from "../../config";
 
-const loadSigma = async (json_file) => {
+import generate_calendar from "./calendar";
+
+const loadSigma = async () => {
     const container = document.querySelector("#graph-container");
     const search_input = document.querySelector("input[type=search]");
     const search_suggestions = document.querySelector("#suggestions");
 
-    const data = await fetch(json_file).then((response) => response.json());
+    const dates = await fetch(`./data/dates.json`).then((response) =>
+        response.json()
+    );
+
+    let date = dates.slice(-1);
+    const url_params = new URLSearchParams(window.location.search);
+    if (url_params.has("date") && dates.includes(url_params.get("date"))) {
+        date = url_params.get("date");
+    }
+
+    generate_calendar(dates);
+
+    let json_file = `${date}.json`;
+
+    const data = await fetch(`./data/${json_file}`).then((response) =>
+        response.json()
+    );
 
     const graph = new Graph();
     graph.import(data);
@@ -170,5 +188,5 @@ const loadSigma = async (json_file) => {
 };
 
 window.addEventListener("DOMContentLoaded", function () {
-    loadSigma("./index.min.json");
+    loadSigma();
 });

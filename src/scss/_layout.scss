@@ -1,6 +1,6 @@
 header {
     width: 100%;
-    height: 57px;
+    height: 137px;
     border-bottom: 1px solid $border;
     display: flex;
     justify-content: space-between;
@@ -20,7 +20,7 @@ header {
 
 .row {
     display: flex;
-    height: calc(100vh - 57px);
+    height: calc(100vh - 137px);
     overflow: hidden;
     flex-direction: row-reverse;
 

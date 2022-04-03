@@ -6,7 +6,12 @@ seedrandom(config.seed, { global: true });
 
 let graph_data = null;
 try {
-    graph_data = require("./dist/index.json");
+    graph_data = require("./dist/data/main.json");
+} catch (ex) {}
+
+let dates = [];
+try {
+    dates = require("./dist/data/dates.json");
 } catch (ex) {}
 
 const Twitter = require("twitter");
@@ -17,6 +22,7 @@ const random = require("graphology-layout/random");
 const louvain = require("graphology-communities-louvain");
 
 const { range } = require("./src/twitter-graph/interpolation");
+const { key_generator } = require("./src/twitter-graph/key_generator");
 
 const fs = require("fs");
 
@@ -25,7 +31,13 @@ if (graph_data) {
     twitter_graph.import(graph_data);
 }
 
-const now = Date.now();
+const date = new Date().toISOString().split("T")[0];
+if (!dates.includes(date)) {
+    dates.push(date);
+}
+fs.writeFile(`dist/data/dates.json`, JSON.stringify(dates), function (err) {
+    if (err) return console.log(err);
+});
 
 const twitter_client = new Twitter({
     consumer_key: process.env.TWITTER_API_KEY,
@@ -52,21 +64,32 @@ const generate = async () => {
         console.log(error);
     }
 
-    const graph_data = JSON.stringify(twitter_graph.export());
+    if (has_fetch_loop_ended()) {
+        cleanup_edges();
+        reset_fetch_loop();
+    }
 
-    fs.writeFile(`dist/index.json`, graph_data, function (err) {
-        if (err) return console.log(err);
-    });
+    export_graph(twitter_graph, "main.json");
 
-    twitter_graph.forEachNode((node, _attributes) => {
+    remove_isolated_nodes();
+    calculate_metrics();
+
+    const graph_minify = minify_graph(twitter_graph);
+    export_graph(graph_minify, `${date}.json`);
+};
+
+const remove_isolated_nodes = () => {
+    twitter_graph.forEachNode((node, attributes) => {
         if (twitter_graph.degree(node) <= 1) {
+            console.log(`remove isolated account ${attributes.label}`);
             twitter_graph.dropNode(node);
         }
     });
+};
 
+const calculate_metrics = () => {
     pagerank.assign(twitter_graph, { alpha: 0.2 });
     random.assign(twitter_graph);
-
     louvain.assign(twitter_graph, { nodeCommunityAttribute: "c" });
 
     calculate_nodes_size();
@@ -76,75 +99,6 @@ const generate = async () => {
         settings: {
             gravity: 0.8,
         },
-    });
-
-    // Optimization of the JSON file size
-    twitter_graph.forEachNode((node, _attributes) => {
-        twitter_graph.removeNodeAttribute(node, "pagerank");
-        twitter_graph.removeNodeAttribute(node, "up");
-        twitter_graph.removeNodeAttribute(node, "followers_next_cursor");
-        twitter_graph.removeNodeAttribute(node, "friends_next_cursor");
-
-        twitter_graph.updateNodeAttribute(node, "x", (x) => Math.round(x));
-        twitter_graph.updateNodeAttribute(node, "y", (y) => Math.round(y));
-    });
-
-    twitter_graph.forEachEdge(
-        (
-            edge,
-            _attributes,
-            _source,
-            _target,
-            sourceAttributes,
-            _targetAttributes
-        ) => {
-            twitter_graph.removeEdgeAttribute(edge, "up");
-        }
-    );
-
-    const incremental_id = () => {
-        let key_map = {};
-
-        let i = 0;
-
-        return (key) => {
-            if (key_map[key] === undefined) {
-                key_map[key] = i++;
-            }
-            return key_map[key];
-        };
-    };
-
-    const key_generator = incremental_id();
-
-    let graph_minify = new Graph();
-
-    twitter_graph.forEachNode((node, attributes) => {
-        graph_minify.addNode(key_generator(node), attributes);
-    });
-
-    twitter_graph.forEachEdge(
-        (
-            edge,
-            attributes,
-            source,
-            target,
-            _sourceAttributes,
-            _targetAttributes
-        ) => {
-            graph_minify.addEdgeWithKey(
-                key_generator(edge),
-                key_generator(source),
-                key_generator(target),
-                attributes
-            );
-        }
-    );
-
-    const graph_min_data = JSON.stringify(graph_minify.export());
-
-    fs.writeFile(`dist/index.min.json`, graph_min_data, function (err) {
-        if (err) return console.log(err);
     });
 };
 
@@ -194,6 +148,45 @@ const add_relation = (from_id, to_id) => {
         }
         twitter_graph.setEdgeAttribute(from_id, to_id, "up", true);
     }
+};
+
+const has_fetch_loop_ended = () => {
+    return twitter_graph.reduceNodes((accumulator, node, attributes) => {
+        if (node == config.twitter_id) {
+            return accumulator;
+        }
+
+        return accumulator && attributes.friends_next_cursor === 0;
+    }, true);
+};
+
+const cleanup_edges = () => {
+    twitter_graph.forEachEdge(
+        (
+            edge,
+            attributes,
+            _source,
+            _target,
+            sourceAttributes,
+            targetAttributes
+        ) => {
+            if (!attributes.up) {
+                console.log(
+                    `Remove relation: ${sourceAttributes.label} -> ${targetAttributes.label}`
+                );
+                twitter_graph.dropEdge(edge);
+            } else {
+                twitter_graph.setEdgeAttribute(edge, "up", false);
+            }
+        }
+    );
+};
+
+const reset_fetch_loop = () => {
+    console.log("Reset loop");
+    twitter_graph.forEachNode((node) => {
+        twitter_graph.setNodeAttribute(node, "friends_next_cursor", -1);
+    });
 };
 
 const get_main_account = async () => {
@@ -249,6 +242,7 @@ const get_main_account = async () => {
         // Cleanup people who no longer in the network
         twitter_graph.forEachNode((node, attributes) => {
             if (!attributes.up) {
+                console.log(`remove gone account ${attributes.label}`);
                 twitter_graph.dropNode(node);
             } else {
                 twitter_graph.setNodeAttribute(node, "up", false);
@@ -381,6 +375,50 @@ const get_account_infos = async (
                 console.log(error);
             }
         });
+};
+
+const minify_graph = (graph) => {
+    console.log("Minify graph");
+    let graph_minify = new Graph();
+
+    const attributes = graph.getAttributes();
+
+    graph.forEachNode((node, attributes) => {
+        graph_minify.addNode(key_generator(node), {
+            label: attributes.label,
+            size: Math.round(attributes.size),
+            x: Math.round(attributes.x),
+            y: Math.round(attributes.y),
+            c: attributes.c,
+        });
+    });
+
+    graph.forEachEdge(
+        (
+            edge,
+            _attributes,
+            source,
+            target,
+            _sourceAttributes,
+            _targetAttributes
+        ) => {
+            graph_minify.addEdgeWithKey(
+                key_generator(edge),
+                key_generator(source),
+                key_generator(target)
+            );
+        }
+    );
+
+    return graph_minify;
+};
+
+const export_graph = (graph, filename) => {
+    console.log(`Export graph ${filename}`);
+    const json_data = JSON.stringify(graph.export());
+    fs.writeFile(`dist/data/${filename}`, json_data, function (err) {
+        if (err) return console.log(err);
+    });
 };
 
 generate();

@@ -1,0 +1,30 @@
+$calendar-textlabelcolor: #aaa;
+$calendar-bordercolor: #444;
+
+
+
+#calendar-container {
+    svg {
+        width: 720px;
+        height: 110px;
+        // background: hsl(210,70%,85%);
+      }
+      
+      .calendar-monthname {
+        font-size: 10px;
+        fill: $calendar-textlabelcolor;
+      }
+      
+      .calendar-daylabel {
+        fill: $calendar-textlabelcolor;
+        font-size: 10px;
+        text-anchor: middle;
+      }
+      
+      .calendar-day {
+        &:hover {
+          stroke: $calendar-bordercolor;
+        }
+      }
+}
+
