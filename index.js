@@ -50,14 +50,15 @@ const generate = async () => {
     try {
         await get_main_account();
 
-        const nodes = twitter_graph.nodes();
+        while (true) {
+            const nodes = twitter_graph.nodes();
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                const attributes = twitter_graph.getNodeAttributes(node);
 
-        for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
-            const attributes = twitter_graph.getNodeAttributes(node);
-
-            if (node != config.twitter_id) {
-                await get_account_infos("friends", attributes.label, node);
+                if (node != config.twitter_id) {
+                    await get_account_infos("friends", attributes.label, node);
+                }
             }
         }
     } catch (error) {
