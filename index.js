@@ -50,7 +50,7 @@ const generate = async () => {
     try {
         await get_main_account();
 
-        while (true) {
+        for (let index = 0; index < 15; index++) {
             const nodes = twitter_graph.nodes();
             for (let i = 0; i < nodes.length; i++) {
                 const node = nodes[i];
