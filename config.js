@@ -1,6 +1,13 @@
 module.exports = {
     seed: "twitter-graph",
 
+    accounts: [
+        {
+            username: "greaby_",
+            id:151869891
+        }
+    ],
+
     twitter_account: "greaby_",
     twitter_id: 151869891,
 
