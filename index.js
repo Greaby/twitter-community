@@ -357,6 +357,15 @@ const fetch_account = async (
 
         return fetch_functions[type](twitter_client, twitter_id, params).then(
             (result) => {
+                if (result.errors) {
+                    twitter_graph.setNodeAttribute(
+                        twitter_id,
+                        `${type}_pagination_token`,
+                        0
+                    );
+                    return;
+                }
+
                 twitter_graph.setNodeAttribute(
                     twitter_id,
                     `${type}_pagination_token`,
