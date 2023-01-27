@@ -2,7 +2,7 @@ name: fetch_twitter
 
 on:
   schedule:
-    - cron: "*/15 * 9-12 * *"
+    - cron: "*/30 * * * *"
 jobs:
   deploy:
     runs-on: ubuntu-latest
