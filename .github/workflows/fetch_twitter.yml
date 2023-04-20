@@ -21,6 +21,8 @@ jobs:
           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
           TWITTER_API_SECRET_KEY: ${{ secrets.TWITTER_API_SECRET_KEY }}
       - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com> # defaults to author of the commit that triggered the run
       - uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
           branch: gh-pages # The branch the action should deploy to.
